@@ -6,10 +6,10 @@ import path from "path";
 import fs from 'fs';
 
 import userRoutes from './src/routes/userRoutes.js';
+import iotRoutes from './src/routes/iotRoutes.js';
 
 // Resolve .env path
 const envPath = path.resolve(process.cwd(), '.env');
-console.log('[DEBUG] Looking for .env at:', envPath);
 
 // Load .env
 if (fs.existsSync(envPath)) {
@@ -18,9 +18,6 @@ if (fs.existsSync(envPath)) {
 } else {
     console.error('[ERROR] .env file not found!');
 }
-
-// ✅ Now log env vars after loading
-console.log('DB_USER:', process.env.DB_USER);
 
 const app = express();
 
@@ -31,6 +28,7 @@ app.use(bodyParser.json());
 
 // Routes
 app.use('/users', userRoutes);
+app.use('/iot', iotRoutes);
 // app.use('/lfs/api/post', postRoutes);
 // app.use('/lfs/api/service', serviceRequestRoutes);
 // app.use('/lfs/api/subscription', subscriptionRoutes);

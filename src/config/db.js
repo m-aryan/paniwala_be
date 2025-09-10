@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
 console.log('Env vars:', {
     DB_USER: process.env.DB_USER || '(empty)',
     DB_PASSWORD: process.env.DB_PASSWORD ? '(hidden)' : '(empty)',
