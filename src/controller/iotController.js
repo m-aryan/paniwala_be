@@ -70,25 +70,102 @@ const getEspaData = (req, res) => {
 const ble_post = (req, res) => {
     try {
         const devices = req.body;
+        
         if (!Array.isArray(devices)) {
             return res.status(400).json({ error: 'Expected a JSON array' });
         }
+
+        if (devices.length === 0) {
+            return res.status(400).json({ error: 'Array cannot be empty' });
+        }
+        
+        const validationErrors = [];
+        devices.forEach((device, index) => {
+            const deviceErrors = [];
+            
+            if (typeof device !== 'object' || device === null) {
+                validationErrors.push({ device: index, errors: ['Device must be an object'] });
+                return;
+            }
+            
+            if (!device.id || typeof device.id !== 'string' || device.id.trim() === '') {
+                deviceErrors.push('id is required and must be a non-empty string');
+            }
+            
+            if (!device.addr || typeof device.addr !== 'string') {
+                deviceErrors.push('addr is required and must be a string');
+            } else {
+                const macPattern = /^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$/;
+                if (!macPattern.test(device.addr)) {
+                    deviceErrors.push('addr must be a valid MAC address format (XX:XX:XX:XX:XX:XX)');
+                }
+            }
+            
+            if (!device.hasOwnProperty('rssi') || typeof device.rssi !== 'number') {
+                deviceErrors.push('rssi is required and must be a number');
+            } else if (device.rssi > 0 || device.rssi < -100) {
+                deviceErrors.push('rssi must be between -100 and 0');
+            }
+            
+            if (!device.hasOwnProperty('floor') || typeof device.floor !== 'number' || !Number.isInteger(device.floor)) {
+                deviceErrors.push('floor is required and must be an integer');
+            }
+
+            if (device.hasOwnProperty('name') && typeof device.name !== 'string') {
+                deviceErrors.push('name must be a string if provided');
+            }
+            
+            if (deviceErrors.length > 0) {
+                validationErrors.push({ device: index, errors: deviceErrors });
+            }
+        });
+        
+        if (validationErrors.length > 0) {
+            return res.status(400).json({
+                error: 'Validation failed',
+                details: validationErrors
+            });
+        }
+
         const now = Date.now() / 1000;
         devices.forEach(device => {
+            const cleanDevice = {
+                id: device.id,
+                addr: device.addr.toLowerCase(),
+                rssi: device.rssi,
+                floor: device.floor
+            };
+            
+            if (device.name && device.name.trim() !== '') {
+                cleanDevice.name = device.name.trim();
+            }
+            
             const entry = {
                 timestamp: now,
                 formatted_timestamp: formatBleTimestamp(now),
-                device
+                device: cleanDevice
             };
+            
             ble_storage.push(entry);
             ble_logs.push(entry);
             HISTORY.push(entry);
         });
+        
         cleanupOldBleData();
         cleanupOldBleLogs();
-        res.status(200).json({ status: 'success', received: devices.length });
+        
+        res.status(200).json({ 
+            status: 'success', 
+            received: devices.length,
+            message: `Successfully processed ${devices.length} device(s)`
+        });
+        
     } catch (err) {
-        res.status(500).json({ status: 'error', message: err.message });
+        console.error('BLE POST Error:', err);
+        res.status(500).json({ 
+            status: 'error', 
+            message: err.message 
+        });
     }
 };
 
