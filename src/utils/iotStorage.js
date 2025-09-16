@@ -3,7 +3,7 @@
 const espa_storage = [];
 const espa_logs = [];
 const permanent_history = [];
-const TIME_LIMIT = 600;
+const TIME_LIMIT = 90;
 
 function cleanupOldData() {
   const now = Date.now() / 1000;

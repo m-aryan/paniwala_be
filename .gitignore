@@ -53,3 +53,6 @@ test-output/
 
 # TypeScript output (if using TS)
 *.tsbuildinfo
+
+# Firebase Service Account Credentials
+firebase-service-account.json

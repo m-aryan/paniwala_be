@@ -13,7 +13,7 @@ import alertRoutes from './src/routes/alertRoutes.js';
 const envPath = path.resolve(process.cwd(), '.env');
 
 // Load .env
-if (fs.existsSync(envPath)) {
+if (fs.existsSync(envPath)) { 
     console.log('[DEBUG] .env file exists. Loading...');
     dotenv.config({ path: envPath, override: true });
 } else {
