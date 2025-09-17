@@ -56,3 +56,6 @@ test-output/
 
 # Firebase Service Account Credentials
 firebase-service-account.json
+
+# Google Cloud Platform Service Key
+jeevraksha-461908-2165aa6ea477.json

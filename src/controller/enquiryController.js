@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import enquiryQueries from "../queries/enquiryQueries.js";
+import { addToGoogleSheet } from "../services/googleSheetService.js";
 
 const generateEnquiry = async (req, res) => {
     const { firstName, lastName, email, organization, projectType, projectDetails, newsletter } = req.body;
@@ -21,6 +22,12 @@ const generateEnquiry = async (req, res) => {
         );
 
         connection.release();
+
+        try {
+            await addToGoogleSheet({ firstName, lastName, email, organization, projectType, projectDetails, newsletter });
+        } catch (sheetError) {
+            console.error('Google Sheets insert failed:', sheetError);
+        }
 
         return res.status(200).json({
             success: true,
