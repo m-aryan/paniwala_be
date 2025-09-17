@@ -8,6 +8,7 @@ import fs from 'fs';
 import userRoutes from './src/routes/userRoutes.js';
 import iotRoutes from './src/routes/iotRoutes.js';
 import alertRoutes from './src/routes/alertRoutes.js';
+import enquiryRoutes from './src/routes/enquiryRoutes.js';
 
 // Resolve .env path
 const envPath = path.resolve(process.cwd(), '.env');
@@ -31,6 +32,7 @@ app.use(bodyParser.json());
 app.use('/users', userRoutes);
 app.use('/iot', iotRoutes);
 app.use('/alerts', alertRoutes);
+app.use('/enquiry', enquiryRoutes);
 // app.use('/lfs/api/service', serviceRequestRoutes);
 // app.use('/lfs/api/subscription', subscriptionRoutes);
 
