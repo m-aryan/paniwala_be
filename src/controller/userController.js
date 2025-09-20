@@ -4,9 +4,9 @@ import bcrypt from 'bcrypt'
 import pool from "../config/db.js";
 import authQueries from "../queries/authQueries.js";
 
-// Aryan Mane (test123)
-// Nikhil Rane (test789)
-// Siddesh Wani (pass@123)
+// Aryan Mane (a@g.com -> test123)
+// Nikhil Rane (ravi@gmail.com -> test789)
+// Siddesh Wani (siddesh@gmail.com -> pass@123)
 const login = async (req, res) => {
     const { phone, email, password } = req.body;
 
