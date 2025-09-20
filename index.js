@@ -33,8 +33,7 @@ app.use('/users', userRoutes);
 app.use('/iot', iotRoutes);
 app.use('/alerts', alertRoutes);
 app.use('/enquiry', enquiryRoutes);
-// app.use('/lfs/api/service', serviceRequestRoutes);
-// app.use('/lfs/api/subscription', subscriptionRoutes);
+
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
