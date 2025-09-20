@@ -2,22 +2,30 @@ const authQueries = {
 
     // Login Queries
     findUserByPhoneOrEmail: `
-        SELECT * FROM users
-        WHERE (phone = ? OR email = ?)
+        SELECT u.*, c.name AS company_name
+        FROM users u
+        LEFT JOIN company_topics c ON u.company_id = c.id
+        WHERE u.phone = ? OR u.email = ?
         LIMIT 1
     `,
 
     findUserByPhone: `
-        SELECT * FROM users
-        WHERE phone = ?
+        SELECT u.*, c.name AS company_name
+        FROM users u
+        LEFT JOIN company_topics c ON u.company_id = c.id
+        WHERE u.phone = ?
         LIMIT 1
     `,
 
+
     findUserByEmail: `
-        SELECT * FROM users
-        WHERE email = ?
+        SELECT u.*, c.name AS company_name
+        FROM users u
+        LEFT JOIN company_topics c ON u.company_id = c.id
+        WHERE u.email = ?
         LIMIT 1
     `,
+
 
     // Register / SignUp Queries
     registerUser: `

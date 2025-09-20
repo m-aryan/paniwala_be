@@ -50,7 +50,6 @@ const login = async (req, res) => {
         const { password: _, ...userWithoutPassword } = user;
 
         return res.status(200).json({
-
             message: 'Login successful',
             user: userWithoutPassword,
         });

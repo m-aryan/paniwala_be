@@ -12,9 +12,11 @@ const iotRouter = express.Router();
 iotRouter.post('/monster', monster);
 iotRouter.get('/monster', getEspaData);
 
+// Org level
 iotRouter.post('/ble-data', ble_post);
 iotRouter.get('/ble-data', ble_get);
 
+// Floor | Section Level
 iotRouter.get('/room-device-data-floor-7', getRoomDeviceDataFloor7);
 iotRouter.get('/room-device-data-floor-8', getRoomDeviceDataFloor8);
 
