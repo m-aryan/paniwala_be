@@ -2,7 +2,7 @@ const authQueries = {
 
     // Login Queries
     findUserByPhoneOrEmail: `
-        SELECT u.*, c.name AS company_name
+        SELECT u.*, c.company_name
         FROM users u
         LEFT JOIN company_topics c ON u.company_id = c.id
         WHERE u.phone = ? OR u.email = ?
@@ -10,7 +10,7 @@ const authQueries = {
     `,
 
     findUserByPhone: `
-        SELECT u.*, c.name AS company_name
+        SELECT u.*, c.company_name
         FROM users u
         LEFT JOIN company_topics c ON u.company_id = c.id
         WHERE u.phone = ?
@@ -19,7 +19,7 @@ const authQueries = {
 
 
     findUserByEmail: `
-        SELECT u.*, c.name AS company_name
+        SELECT u.*, c.company_name
         FROM users u
         LEFT JOIN company_topics c ON u.company_id = c.id
         WHERE u.email = ?
