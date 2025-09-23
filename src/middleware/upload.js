@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 // File filter
 const fileFilter = (req, file, cb) => {
   console.log("=== FILE UPLOAD DEBUG ===");
-  console.log("Field name:", file.fieldname);
+  console.log("Field name:", file.fieldname);GI
   console.log("Original name:", file.originalname);
   console.log("MIME type:", file.mimetype);
   console.log("File size:", file.size);

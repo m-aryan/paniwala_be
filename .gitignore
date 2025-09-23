@@ -1,6 +1,6 @@
 # Node modules
 node_modules/
-
+uploads/
 # Logs
 logs/
 *.log
@@ -59,3 +59,5 @@ firebase-service-account.json
 
 # Google Cloud Platform Service Key
 jeevraksha-461908-2165aa6ea477.json
+
+
