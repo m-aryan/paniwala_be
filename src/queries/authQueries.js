@@ -53,26 +53,53 @@ const authQueries = {
 
 
     // Get User Profile
-    findUserById: `
-        SELECT 
-            u.id, 
-            u.name, 
-            u.phone, 
-            u.email, 
-            u.created_at, 
-            u.address, 
-            u.city, 
-            u.department, 
-            u.device, 
-            u.platform, 
-            u.role, 
-            u.fcm_token, 
-            u.company_id,
-            c.topic_name AS topic_subscribed
-        FROM users u
-        JOIN company_topics c ON u.company_id = c.id
-        WHERE u.id = ?;
-    `,
+    // findUserById: `
+    //     SELECT 
+    //         u.id, 
+    //         u.name, 
+    //         u.phone, 
+    //         u.email, 
+    //         u.created_at, 
+    //         u.address, 
+    //         u.city, 
+    //         u.department, 
+    //         u.device, 
+    //         u.platform, 
+    //         u.role, 
+    //         u.fcm_token, 
+    //         u.company_id,
+    //         c.topic_name AS topic_subscribed
+    //     FROM users u
+    //     JOIN company_topics c ON u.company_id = c.id
+    //     WHERE u.id = ?;
+    // `,
+
+
+
+
+findUserById: `
+    SELECT 
+        u.id, 
+        u.name, 
+        u.phone, 
+        u.email, 
+        u.created_at, 
+        u.address, 
+        u.city, 
+        u.department, 
+        u.device, 
+        u.platform, 
+        u.role, 
+        u.fcm_token, 
+        u.company_id,
+        u.password,
+        c.company_name
+    FROM users u
+    LEFT JOIN company_topics c ON u.company_id = c.id
+    WHERE u.id = ?
+    LIMIT 1
+`
+,
 
     // Update User Profile
     updateUserDetails: (fieldsToUpdate) => `
