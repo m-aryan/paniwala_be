@@ -41,9 +41,9 @@ app.use('/users', userRoutes);
 app.use('/iot', iotRoutes);
 app.use('/alerts', alertRoutes);
 app.use('/enquiry', enquiryRoutes);
-app.use("/api", resourceRoutes);
-app.use("/api", zoneRoutes);
-app.use("/api", floorMapRoutes);
+app.use("/resource", resourceRoutes);
+app.use("/zone", zoneRoutes);
+app.use("/floor", floorMapRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
