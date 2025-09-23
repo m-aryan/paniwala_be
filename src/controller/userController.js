@@ -1,17 +1,13 @@
-import bcrypt from 'bcrypt'
-// import jwt from 'jsonwebtoken';
-
+import bcrypt from "bcryptjs";
 import pool from "../config/db.js";
 import authQueries from "../queries/authQueries.js";
+import { generateToken } from "../utils/jwtHelper.js";
 
-// Aryan Mane (a@g.com -> test123)
-// Nikhil Rane (ravi@gmail.com -> test789)
-// Siddesh Wani (siddesh@gmail.com -> pass@123)
 const login = async (req, res) => {
     const { phone, email, password } = req.body;
 
     if ((!phone && !email) || !password) {
-        return res.status(400).json({ error: 'Phone or email and password are required' });
+        return res.status(400).json({ error: "Phone or email and password are required" });
     }
 
     try {
@@ -35,7 +31,7 @@ const login = async (req, res) => {
         connection.release();
 
         if (rows.length === 0) {
-            return res.status(404).json({ error: 'No matching user found' });
+            return res.status(404).json({ error: "No matching user found" });
         }
 
         const user = rows[0];
@@ -43,20 +39,33 @@ const login = async (req, res) => {
         // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({ error: 'Invalid password' });
+            return res.status(401).json({ error: "Invalid password" });
         }
 
-        // Return user data
+        // Exclude password from response and create clean user object for token
         const { password: _, ...userWithoutPassword } = user;
+        
+        // Create a clean payload for JWT (only essential fields)
+        const tokenPayload = {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            role: user.role
+        };
+
+        // Generate JWT token with clean payload
+        const token = generateToken(tokenPayload);
 
         return res.status(200).json({
-            message: 'Login successful',
+            message: "Login successful",
+            token,
             user: userWithoutPassword,
         });
 
     } catch (error) {
+        console.error("Login error:", error);
         return res.status(500).json({
-            error: 'Failed to login',
+            error: "Failed to login",
             message: error.message,
         });
     }
@@ -86,7 +95,7 @@ const signup = async (req, res) => {
                 error: 'User with this email or phone already exists'
             });
         }
-
+                                                            
         const [companyRows] = await connection.query(
             authQueries.findCompanyByName,
             [companyName]
@@ -144,19 +153,14 @@ const getCompanies = async (req, res) => {
 };
 
 const getUserProfile = async (req, res) => {
-    const { id } = req.body;
-
-    if (!id) {
-        return res.status(400).json({ error: 'User ID is required in body' });
-    }
+    const userId = req.user.id; // get ID from JWT
 
     try {
         const connection = await pool.getConnection();
-
-        const [rows] = await connection.query(authQueries.findUserById, [id]);
+        const [rows] = await connection.query(authQueries.findUserById, [userId]);
         connection.release();
 
-        if (rows.length == 0) {
+        if (rows.length === 0) {
             return res.status(404).json({ error: 'User not found!' });
         }
 
@@ -164,13 +168,15 @@ const getUserProfile = async (req, res) => {
         const { password, ...userWithoutPassword } = user;
 
         return res.status(200).json({
-            message: 'User detailed fetched successfully',
+            message: 'User profile fetched successfully',
             user: userWithoutPassword,
         });
     } catch (error) {
+        console.error(error);
         return res.status(500).json({ error: 'Server error' });
     }
 };
+
 
 const updateProfile = async (req, res) => {
     const { id: userId, name, phone, address, city, department, fcm_token } = req.body;
