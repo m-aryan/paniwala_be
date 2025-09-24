@@ -12,7 +12,7 @@ const floorMapQueries = {
     VALUES (?, ?, ?, ?, ?)
   `,
   insertAccessBlock: `
-    INSERT INTO Access_block (floor_map_id, access_block_name, access_block_x_pos, access_block_y_pos, access_block_height, access_block_width, description)
+    INSERT INTO access_block (floor_map_id, access_block_name, access_block_x_pos, access_block_y_pos, access_block_height, access_block_width, description)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `,
   insertZone: `
