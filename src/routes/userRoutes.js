@@ -11,9 +11,5 @@ router.get('/getCompanies', getCompanies);
 router.post('/updateProfile', updateProfile);
 router.post('/updateDevice', updateUserDevice);
 router.post('/getProfile', authenticateToken,getUserProfile);
-// router.post('/user', user);
-// router.post('/refresh-token', refreshToken);
-// router.post('/register', register);
-
 
 export default router;

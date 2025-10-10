@@ -3,6 +3,79 @@ import pool from "../config/db.js";
 import authQueries from "../queries/authQueries.js";
 import { generateToken } from "../utils/jwtHelper.js";
 
+// const login = async (req, res) => {
+//     const { phone, email, password } = req.body;
+
+//     if ((!phone && !email) || !password) {
+//         return res.status(400).json({ error: "Phone or email and password are required" });
+//     }
+
+//     try {
+//         const connection = await pool.getConnection();
+
+//         let query;
+//         let params = [];
+
+//         if (phone && email) {
+//             query = authQueries.findUserByPhoneOrEmail;
+//             params = [phone, email];
+//         } else if (phone) {
+//             query = authQueries.findUserByPhone;
+//             params = [phone];
+//         } else {
+//             query = authQueries.findUserByEmail;
+//             params = [email];
+//         }
+
+//         const [rows] = await connection.query(query, params);
+//         connection.release();
+
+//         if (rows.length === 0) {
+//             return res.status(404).json({ error: "No matching user found" });
+//         }
+
+//         const user = rows[0];
+
+//         // Compare password
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch) {
+//             return res.status(401).json({ error: "Invalid password" });
+//         }
+
+//         // Exclude password from response and create clean user object for token
+//         const { password: _, ...userWithoutPassword } = user;
+//         console.log("users",user)
+        
+//         // Create a clean payload for JWT (only essential fields)
+//         const tokenPayload = {
+//             id: user.id,
+//             email: user.email,
+//             phone: user.phone,
+//             role: user.role,
+//              company_id: user.company_id 
+//         };
+//         console.log("payloaddd",tokenPayload)
+
+//         // Generate JWT token with clean payload
+//         const token = generateToken(tokenPayload);
+
+//         return res.status(200).json({
+//             message: "Login successful",
+//             token,
+//             user: userWithoutPassword,
+//         });
+
+//     } catch (error) {
+//         console.error("Login error:", error);
+//         return res.status(500).json({
+//             error: "Failed to login",
+//             message: error.message,
+//         });
+//     }
+// };
+
+
+
 const login = async (req, res) => {
     const { phone, email, password } = req.body;
 
@@ -13,9 +86,8 @@ const login = async (req, res) => {
     try {
         const connection = await pool.getConnection();
 
-        let query;
-        let params = [];
-
+        // 1️⃣ Get user
+        let query, params = [];
         if (phone && email) {
             query = authQueries.findUserByPhoneOrEmail;
             params = [phone, email];
@@ -28,38 +100,47 @@ const login = async (req, res) => {
         }
 
         const [rows] = await connection.query(query, params);
-        connection.release();
 
         if (rows.length === 0) {
+            connection.release();
             return res.status(404).json({ error: "No matching user found" });
         }
 
         const user = rows[0];
 
-        // Compare password
+        // 2️⃣ Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            connection.release();
             return res.status(401).json({ error: "Invalid password" });
         }
 
-        // Exclude password from response and create clean user object for token
         const { password: _, ...userWithoutPassword } = user;
-        
-        // Create a clean payload for JWT (only essential fields)
+
+        // 3️⃣ Generate JWT token
         const tokenPayload = {
             id: user.id,
             email: user.email,
             phone: user.phone,
-            role: user.role
+            role: user.role,
+            company_id: user.company_id
         };
-
-        // Generate JWT token with clean payload
         const token = generateToken(tokenPayload);
 
+        // 4️⃣ Get all company topics for this user's company
+        const [companyTopics] = await connection.query(
+            "SELECT * FROM company_topics WHERE id = ?",
+            [user.company_id]
+        );
+
+        connection.release();
+
+        // 5️⃣ Return response
         return res.status(200).json({
             message: "Login successful",
             token,
             user: userWithoutPassword,
+            companyTopics, // 👈 all topics for this company
         });
 
     } catch (error) {
@@ -70,6 +151,8 @@ const login = async (req, res) => {
         });
     }
 };
+
+
 
 const signup = async (req, res) => {
     const { firstName, lastName, email, phone, password, companyName } = req.body;
