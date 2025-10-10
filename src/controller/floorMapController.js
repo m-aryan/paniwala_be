@@ -26,10 +26,23 @@ export const addFloorMapAllTables = async (req, res) => {
     const resourcesArr = JSON.parse(req.body.resources || "[]");
 
     // 1️⃣ Insert into floor_map
-    const [floorMapResult] = await connection.execute(floorMapQueries.insertFloorMap, [
-      img_url, f.height, f.width, f.offsets, f.area_name, f.company_id, f.floor_number
-    ]);
-    const floorMapId = floorMapResult.insertId;
+    // const [floorMapResult] = await connection.execute(floorMapQueries.insertFloorMap, [
+    //   img_url, f.height, f.width, f.offsets, f.area_name, f.company_id, f.floor_number
+    // ]);
+    // const floorMapId = floorMapResult.insertId;
+
+// 1️⃣ Insert into floor_map
+const [floorMapResult] = await connection.execute(floorMapQueries.insertFloorMap, [
+  img_url, f.height, f.width, f.offsets, f.area_name, f.company_id
+]);
+
+const floorMapId = floorMapResult.insertId;
+
+// 1.1️⃣ Insert into floor
+await connection.execute(floorMapQueries.insertFloor, [
+  floorMapId, f.floor_name, f.floor_number
+]);
+
 
     // 2️⃣ Insert RTDT
     for (const r of rtdtArr) {
@@ -86,5 +99,51 @@ export const addFloorMapAllTables = async (req, res) => {
     res.status(500).json({ error: "Internal server error", message: err.message });
   } finally {
     connection.release();
+  }
+};
+export const getFloorMapsByCompany = async (req, res) => {
+  const companyId = req.user.company_id; // from JWT
+  console.log("id=", companyId);
+
+  try {
+    const connection = await pool.getConnection();
+
+    // 1️⃣ Get all floor maps for this company
+    const [floorMaps] = await connection.query(
+      floorMapQueries.getFloorMapsByCompany,
+      [companyId]
+    );
+
+    // 2️⃣ For each floor map, fetch its related tables
+    for (let floorMap of floorMaps) {
+      const [rtdt] = await connection.query(floorMapQueries.getRTDTByFloorMap, [floorMap.id]);
+      const [deviceBubbles] = await connection.query(floorMapQueries.getDeviceBubblesByFloorMap, [floorMap.id]);
+      const [accessBlocks] = await connection.query(floorMapQueries.getAccessBlocksByFloorMap, [floorMap.id]);
+      const [zones] = await connection.query(floorMapQueries.getZonesByFloorMap, [floorMap.id]);
+      const [resources] = await connection.query(floorMapQueries.getResourcesByFloorMap, [floorMap.id]);
+
+      // 🔹 New: Get floor info
+      const [floors] = await connection.query(floorMapQueries.getFloorsByFloorMap, [floorMap.id]);
+
+      floorMap.rtdt = rtdt;
+      floorMap.device_bubbles = deviceBubbles;
+      floorMap.access_blocks = accessBlocks;
+      floorMap.zones = zones;
+      floorMap.resources = resources;
+      floorMap.floors = floors;
+    }
+
+    connection.release();
+
+    return res.status(200).json({
+      message: "Floor maps retrieved successfully",
+      company_id: companyId,
+      count: floorMaps.length,
+      data: floorMaps
+    });
+
+  } catch (err) {
+    console.error("Error fetching floor maps:", err);
+    res.status(500).json({ error: "Internal server error", message: err.message });
   }
 };
