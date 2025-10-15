@@ -1,79 +1,10 @@
+import { randomBytes, createHash } from 'crypto';
 import bcrypt from "bcryptjs";
+import { hash } from 'bcrypt';
 import pool from "../config/db.js";
 import authQueries from "../queries/authQueries.js";
 import { generateToken } from "../utils/jwtHelper.js";
-
-// const login = async (req, res) => {
-//     const { phone, email, password } = req.body;
-
-//     if ((!phone && !email) || !password) {
-//         return res.status(400).json({ error: "Phone or email and password are required" });
-//     }
-
-//     try {
-//         const connection = await pool.getConnection();
-
-//         let query;
-//         let params = [];
-
-//         if (phone && email) {
-//             query = authQueries.findUserByPhoneOrEmail;
-//             params = [phone, email];
-//         } else if (phone) {
-//             query = authQueries.findUserByPhone;
-//             params = [phone];
-//         } else {
-//             query = authQueries.findUserByEmail;
-//             params = [email];
-//         }
-
-//         const [rows] = await connection.query(query, params);
-//         connection.release();
-
-//         if (rows.length === 0) {
-//             return res.status(404).json({ error: "No matching user found" });
-//         }
-
-//         const user = rows[0];
-
-//         // Compare password
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch) {
-//             return res.status(401).json({ error: "Invalid password" });
-//         }
-
-//         // Exclude password from response and create clean user object for token
-//         const { password: _, ...userWithoutPassword } = user;
-//         console.log("users",user)
-        
-//         // Create a clean payload for JWT (only essential fields)
-//         const tokenPayload = {
-//             id: user.id,
-//             email: user.email,
-//             phone: user.phone,
-//             role: user.role,
-//              company_id: user.company_id 
-//         };
-//         console.log("payloaddd",tokenPayload)
-
-//         // Generate JWT token with clean payload
-//         const token = generateToken(tokenPayload);
-
-//         return res.status(200).json({
-//             message: "Login successful",
-//             token,
-//             user: userWithoutPassword,
-//         });
-
-//     } catch (error) {
-//         console.error("Login error:", error);
-//         return res.status(500).json({
-//             error: "Failed to login",
-//             message: error.message,
-//         });
-//     }
-// };
-
+import { sendResetEmail, sendPasswordChangedEmail } from '../utils/sendEmail.js';
 
 
 const login = async (req, res) => {
@@ -86,7 +17,7 @@ const login = async (req, res) => {
     try {
         const connection = await pool.getConnection();
 
-        // 1️⃣ Get user
+        // Get user
         let query, params = [];
         if (phone && email) {
             query = authQueries.findUserByPhoneOrEmail;
@@ -108,7 +39,7 @@ const login = async (req, res) => {
 
         const user = rows[0];
 
-        // 2️⃣ Compare password
+        // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             connection.release();
@@ -117,7 +48,7 @@ const login = async (req, res) => {
 
         const { password: _, ...userWithoutPassword } = user;
 
-        // 3️⃣ Generate JWT token
+        // Generate JWT token
         const tokenPayload = {
             id: user.id,
             email: user.email,
@@ -127,7 +58,7 @@ const login = async (req, res) => {
         };
         const token = generateToken(tokenPayload);
 
-        // 4️⃣ Get all company topics for this user's company
+        // Get all company topics for this user's company
         const [companyTopics] = await connection.query(
             "SELECT * FROM company_topics WHERE id = ?",
             [user.company_id]
@@ -135,7 +66,7 @@ const login = async (req, res) => {
 
         connection.release();
 
-        // 5️⃣ Return response
+        // Return response
         return res.status(200).json({
             message: "Login successful",
             token,
@@ -152,7 +83,106 @@ const login = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
 
+    if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+    }
+
+    try {
+        const connection = await pool.getConnection();
+
+        const [users] = await connection.query(authQueries.findUserByEmail, [email]);
+
+        if (users.length === 0) {
+            connection.release();
+            return res.status(200).json({
+                message: "If an account with that email exists, a password reset link has been sent"
+            });
+        }
+
+        const user = users[0];
+
+        await connection.query(authQueries.deleteExistingTokens, [user.id]);
+        const resetToken = randomBytes(32).toString('hex');
+        const hashedToken = createHash('sha256').update(resetToken).digest('hex');
+
+        await connection.query(authQueries.createResetToken, [user.id, hashedToken]);
+        const resetUrl = `${process.env.CLIENT_URL}/reset-password.html?token=${resetToken}`;
+        console.log('=================================');
+        console.log('PASSWORD RESET TOKEN (DEV ONLY):');
+        console.log('Token:', resetToken);
+        console.log('Reset URL:', resetUrl);
+        console.log('=================================');
+        await sendResetEmail(user.email, resetUrl, user.name || user.email);
+
+        connection.release();
+
+        return res.status(200).json({
+            message: "If an account with that email exists, a password reset link has been sent",
+        });
+
+    } catch (error) {
+        console.error("Forgot password error:", error);
+        return res.status(500).json({
+            error: "Failed to process password reset request",
+            message: error.message,
+        });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+    }
+
+    if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters long" });
+    }
+
+    try {
+        const connection = await pool.getConnection();
+        const hashedToken = createHash('sha256').update(token).digest('hex');
+        const [tokens] = await connection.query(authQueries.findValidResetToken, [hashedToken]);
+
+        if (tokens.length === 0) {
+            connection.release();
+            return res.status(400).json({
+                error: "Invalid or expired reset token"
+            });
+        }
+
+        const resetTokenData = tokens[0];
+        const hashedPassword = await hash(newPassword, 10);
+        await connection.query(authQueries.updateUserPassword, [hashedPassword, resetTokenData.user_id]);
+        await connection.query(authQueries.markTokenAsUsed, [hashedToken]);
+
+        const [users] = await connection.query(
+            'SELECT email, name FROM users WHERE id = ?',
+            [resetTokenData.user_id]
+        );
+
+        if (users.length > 0) {
+            await sendPasswordChangedEmail(users[0].email, users[0].name);
+        }
+
+        connection.release();
+
+        return res.status(200).json({
+            message: "Password has been reset successfully. You can now login with your new password.",
+        });
+
+    } catch (error) {
+        console.error("Reset password error:", error);
+        return res.status(500).json({
+            error: "Failed to reset password",
+            message: error.message,
+        });
+    }
+};
 
 const signup = async (req, res) => {
     const { firstName, lastName, email, phone, password, companyName } = req.body;
@@ -178,7 +208,7 @@ const signup = async (req, res) => {
                 error: 'User with this email or phone already exists'
             });
         }
-                                                            
+
         const [companyRows] = await connection.query(
             authQueries.findCompanyByName,
             [companyName]
@@ -259,7 +289,6 @@ const getUserProfile = async (req, res) => {
         return res.status(500).json({ error: 'Server error' });
     }
 };
-
 
 const updateProfile = async (req, res) => {
     const { id: userId, name, phone, address, city, department, fcm_token } = req.body;
@@ -353,4 +382,4 @@ const updateUserDevice = async (req, res) => {
 };
 
 
-export { login, signup, getCompanies, updateUserDevice, updateProfile, getUserProfile }; 
+export { login, signup, getCompanies, updateUserDevice, updateProfile, getUserProfile, forgotPassword, resetPassword }; 
