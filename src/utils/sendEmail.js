@@ -1,137 +1,24 @@
-// // utils/sendEmail.js
-// import nodemailer from 'nodemailer';
-
-// // Create transporter based on environment
-// const createTransporter = async () => {
-//     // For development, use Ethereal (fake SMTP)
-//     if (process.env.NODE_ENV !== 'production') {
-//         const testAccount = await nodemailer.createTestAccount();
-        
-//         return nodemailer.createTransport({
-//             host: 'smtp.ethereal.email',
-//             port: 587,
-//             secure: false,
-//             auth: {
-//                 user: testAccount.user,
-//                 pass: testAccount.pass
-//             }
-//         });
-//     }
-    
-//     // For production, use real SMTP
-//     return nodemailer.createTransport({
-//         host: process.env.EMAIL_HOST,
-//         port: process.env.EMAIL_PORT,
-//         secure: process.env.EMAIL_PORT == 465,
-//         auth: {
-//             user: process.env.EMAIL_USER,
-//             pass: process.env.EMAIL_PASSWORD,
-//         },
-//     });
-// };
-
-// export const sendResetEmail = async (email, resetUrl, userName) => {
-//     const transporter = await createTransporter();
-    
-//     const info = await transporter.sendMail({
-//         from: `"${process.env.APP_NAME || 'App'}" <noreply@app.com>`,
-//         to: email,
-//         subject: 'Password Reset Request',
-//         html: `
-//             <!DOCTYPE html>
-//             <html>
-//             <head>
-//                 <style>
-//                     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-//                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-//                     .button { background-color: #007bff; color: white; padding: 12px 24px; 
-//                              text-decoration: none; border-radius: 4px; display: inline-block; }
-//                     .warning { color: #856404; background-color: #fff3cd; padding: 12px; 
-//                               border-radius: 4px; margin: 20px 0; }
-//                 </style>
-//             </head>
-//             <body>
-//                 <div class="container">
-//                     <h2>Password Reset Request</h2>
-//                     <p>Hi ${userName || 'there'},</p>
-//                     <p>You requested to reset your password. Click the button below to proceed:</p>
-//                     <p style="margin: 30px 0;">
-//                         <a href="${resetUrl}" class="button">Reset Password</a>
-//                     </p>
-//                     <p>Or copy and paste this link:</p>
-//                     <p style="word-break: break-all; color: #007bff;">${resetUrl}</p>
-//                     <div class="warning">
-//                         <strong>Important:</strong>
-//                         <ul>
-//                             <li>This link expires in 1 hour</li>
-//                             <li>If you didn't request this, ignore this email</li>
-//                         </ul>
-//                     </div>
-//                     <p>Thanks,<br>Team</p>
-//                 </div>
-//             </body>
-//             </html>
-//         `,
-//     });
-
-//     // In development, log the preview URL
-//     if (process.env.NODE_ENV !== 'production') {
-//         console.log('');
-//         console.log('📧 EMAIL SENT - Preview URL:');
-//         console.log(nodemailer.getTestMessageUrl(info));
-//         console.log('');
-//     }
-    
-//     return info;
-// };
-
-// export const sendPasswordChangedEmail = async (email, userName) => {
-//     const transporter = await createTransporter();
-    
-//     const info = await transporter.sendMail({
-//         from: `"${process.env.APP_NAME || 'App'}" <noreply@app.com>`,
-//         to: email,
-//         subject: 'Password Changed Successfully',
-//         html: `
-//             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-//                 <h2>Password Changed</h2>
-//                 <p>Hi ${userName || 'there'},</p>
-//                 <p>Your password has been successfully changed.</p>
-//                 <p>If you didn't make this change, contact support immediately.</p>
-//                 <p>Thanks,<br>Team</p>
-//             </div>
-//         `,
-//     });
-
-//     if (process.env.NODE_ENV !== 'production') {
-//         console.log('📧 Password changed email - Preview URL:');
-//         console.log(nodemailer.getTestMessageUrl(info));
-//     }
-    
-//     return info;
-// };
-
-
-
-
-
-
+// utils/sendEmail.js
 import nodemailer from 'nodemailer';
 
-// Create transporter with Gmail
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,              // Use TLS port
+    secure: false,          // Use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD, // App password
+        pass: process.env.EMAIL_PASSWORD,
     },
-    // Production optimizations
+    tls: {
+        ciphers: 'SSLv3',
+        rejectUnauthorized: false
+    },
     pool: true,
     maxConnections: 5,
     maxMessages: 100,
 });
 
-// Verify connection on startup (optional but recommended)
+// Verify connection on startup
 transporter.verify((error, success) => {
     if (error) {
         console.error('Email configuration error:', error);
@@ -272,7 +159,7 @@ export const sendResetEmail = async (email, resetUrl, userName) => {
         return info;
 
     } catch (error) {
-        console.error('❌ Error sending reset email:', error);
+        console.error('Error sending reset email:', error);
         throw new Error('Failed to send password reset email');
     }
 };
