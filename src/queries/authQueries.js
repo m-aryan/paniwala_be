@@ -26,6 +26,37 @@ const authQueries = {
         LIMIT 1
     `,
 
+    // Password Reset Queries
+    createResetToken: `
+        INSERT INTO password_reset_tokens (user_id, token, expires_at)
+        VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))
+    `,
+
+    deleteExistingTokens: `
+        DELETE FROM password_reset_tokens 
+        WHERE user_id = ?
+    `,
+
+    findValidResetToken: `
+        SELECT * FROM password_reset_tokens 
+        WHERE token = ? 
+        AND used = FALSE 
+        AND expires_at > NOW()
+        LIMIT 1
+    `,
+
+    markTokenAsUsed: `
+        UPDATE password_reset_tokens 
+        SET used = TRUE 
+        WHERE token = ?
+    `,
+
+    updateUserPassword: `
+        UPDATE users 
+        SET password = ? 
+        WHERE id = ?
+    `,
+
 
     // Register / SignUp Queries
     registerUser: `
@@ -77,7 +108,7 @@ const authQueries = {
 
 
 
-findUserById: `
+    findUserById: `
     SELECT 
         u.id, 
         u.name, 
@@ -99,7 +130,7 @@ findUserById: `
     WHERE u.id = ?
     LIMIT 1
 `
-,
+    ,
 
     // Update User Profile
     updateUserDetails: (fieldsToUpdate) => `

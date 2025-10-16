@@ -14,7 +14,7 @@ import zoneRoutes from "./src/routes/zoneRoutes.js";
 import floorMapRoutes from "./src/routes/floorMapRoutes.js";
 // Load .env
 const envPath = path.resolve(process.cwd(), '.env');
-if (fs.existsSync(envPath)) { 
+if (fs.existsSync(envPath)) {
     dotenv.config({ path: envPath, override: true });
     console.log("[DEBUG] .env loaded");
 } else {
@@ -22,6 +22,13 @@ if (fs.existsSync(envPath)) {
 }
 
 const app = express();
+
+// public folder for pssword reset page
+const publicDir = path.join(process.cwd(), "public");
+if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir);
+    console.log("Created public folder");
+}
 
 // Create uploads folder if it doesn't exist
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -35,6 +42,13 @@ app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads"))); // serve uploaded files
+
+
+// server static files
+app.use(express.static(path.join(process.cwd(), "public"))); // Password reset page
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+
 
 // Routes
 app.use('/users', userRoutes);

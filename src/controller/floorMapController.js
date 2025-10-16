@@ -31,48 +31,48 @@ export const addFloorMapAllTables = async (req, res) => {
     // ]);
     // const floorMapId = floorMapResult.insertId;
 
-// 1️⃣ Insert into floor_map
-const [floorMapResult] = await connection.execute(floorMapQueries.insertFloorMap, [
-  img_url, f.height, f.width, f.offsets, f.area_name, f.company_id
-]);
+    // Insert into floor_map
+    const [floorMapResult] = await connection.execute(floorMapQueries.insertFloorMap, [
+      img_url, f.height, f.width, f.offsets, f.area_name, f.company_id
+    ]);
 
-const floorMapId = floorMapResult.insertId;
+    const floorMapId = floorMapResult.insertId;
 
-// 1.1️⃣ Insert into floor
-await connection.execute(floorMapQueries.insertFloor, [
-  floorMapId, f.floor_name, f.floor_number
-]);
+    // 1. Insert into floor
+    await connection.execute(floorMapQueries.insertFloor, [
+      floorMapId, f.floor_name, f.floor_number
+    ]);
 
 
-    // 2️⃣ Insert RTDT
+    // Insert RTDT
     for (const r of rtdtArr) {
       await connection.execute(floorMapQueries.insertRTDT, [
         floorMapId, r.RTDA_Name, r.RTDA_X_pos, r.RTDA_Y_pos, r.height, r.width, r.description
       ]);
     }
 
-    // 3️⃣ Insert device bubbles
+    // Insert device bubbles
     for (const b of deviceBubblesArr) {
       await connection.execute(floorMapQueries.insertDeviceBubble, [
         floorMapId, b.device_bubble_name, b.device_bubble_x_pos, b.device_bubble_y_pos, b.description
       ]);
     }
 
-    // 4️⃣ Insert access blocks
+    // Insert access blocks
     for (const a of accessBlocksArr) {
       await connection.execute(floorMapQueries.insertAccessBlock, [
         floorMapId, a.access_block_name, a.access_block_x_pos, a.access_block_y_pos, a.access_block_height, a.access_block_width, a.description
       ]);
     }
 
-    // 5️⃣ Insert zones
+    // Insert zones
     for (const z of zonesArr) {
       await connection.execute(floorMapQueries.insertZone, [
         floorMapId, z.zone_name, z.zone_x_pos, z.zone_y_pos, z.zone_height, z.zone_width, z.description
       ]);
     }
 
-    // 6️⃣ Insert resources
+    // Insert resources
     for (const r of resourcesArr) {
       await connection.execute(floorMapQueries.insertResource, [
         floorMapId, r.resource_name, r.resource_type, r.resource_x_pos, r.resource_y_pos, r.description
@@ -101,6 +101,7 @@ await connection.execute(floorMapQueries.insertFloor, [
     connection.release();
   }
 };
+
 export const getFloorMapsByCompany = async (req, res) => {
   const companyId = req.user.company_id; // from JWT
   console.log("id=", companyId);
@@ -108,13 +109,13 @@ export const getFloorMapsByCompany = async (req, res) => {
   try {
     const connection = await pool.getConnection();
 
-    // 1️⃣ Get all floor maps for this company
+    // Get all floor maps for this company
     const [floorMaps] = await connection.query(
       floorMapQueries.getFloorMapsByCompany,
       [companyId]
     );
 
-    // 2️⃣ For each floor map, fetch its related tables
+    // For each floor map, fetch its related tables
     for (let floorMap of floorMaps) {
       const [rtdt] = await connection.query(floorMapQueries.getRTDTByFloorMap, [floorMap.id]);
       const [deviceBubbles] = await connection.query(floorMapQueries.getDeviceBubblesByFloorMap, [floorMap.id]);
@@ -122,7 +123,7 @@ export const getFloorMapsByCompany = async (req, res) => {
       const [zones] = await connection.query(floorMapQueries.getZonesByFloorMap, [floorMap.id]);
       const [resources] = await connection.query(floorMapQueries.getResourcesByFloorMap, [floorMap.id]);
 
-      // 🔹 New: Get floor info
+      // New: Get floor info
       const [floors] = await connection.query(floorMapQueries.getFloorsByFloorMap, [floorMap.id]);
 
       floorMap.rtdt = rtdt;

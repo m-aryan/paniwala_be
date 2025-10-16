@@ -6,7 +6,7 @@ insertFloorMap: `
 `,
 
   insertRTDT: `
-    INSERT INTO RTDT (floor_map_id, RTDA_Name, RTDA_X_pos, RTDA_Y_pos, height, width, description)
+    INSERT INTO rtdt (floor_map_id, RTDA_Name, RTDA_X_pos, RTDA_Y_pos, height, width, description)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `,
   insertDeviceBubble: `

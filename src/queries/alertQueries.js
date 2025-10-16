@@ -39,8 +39,8 @@ const alertQueries = {
     getRecentZoneData: `
         SELECT *
         FROM alert_history
-        WHERE received_at >= (UTC_TIMESTAMP() - INTERVAL 2 MINUTE)
-        ORDER BY received_at DESC
+        WHERE time >= (UTC_TIMESTAMP() - INTERVAL 2 MINUTE)
+        ORDER BY time DESC
     `,
 
     // Get recent zone data by company_name
@@ -48,8 +48,8 @@ const alertQueries = {
         SELECT *
         FROM alert_history
         WHERE company_name = ? 
-          AND received_at >= (UTC_TIMESTAMP() - INTERVAL 2 MINUTE)
-        ORDER BY received_at DESC
+          AND time >= (UTC_TIMESTAMP() - INTERVAL 2 MINUTE)
+        ORDER BY time DESC
     `,
 }
 
